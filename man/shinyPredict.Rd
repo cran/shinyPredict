@@ -44,6 +44,7 @@ In Plot-tab, select variable for x-axis (in coxph-models only time-variable is p
 You may choose number of predictions calculate in using slider input below plot.
 Predictions with 95\% confidence interval are shown.
 In Data-tab data and predicted values are show.
+AIC-tab shows Aikaike's Information Criteria and relative likelihood of models.
 Summary-tab shows the summary of current model.
 Info-tab show additional information provided by user.
 

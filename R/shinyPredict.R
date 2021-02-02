@@ -1,3 +1,4 @@
+#
 #'
 #' Makes shiny application for predictions
 #'
@@ -17,6 +18,7 @@
 #' You may choose number of predictions calculate in using slider input below plot.
 #' Predictions with 95% confidence interval are shown.
 #' In Data-tab data and predicted values are show.
+#' AIC-tab shows Aikaike's Information Criteria and relative likelihood of models.
 #' Summary-tab shows the summary of current model.
 #' Info-tab show additional information provided by user.
 #' @note Actual data is not loaded to path folder.  'model' and 'x' are removed from lm-models.
@@ -114,7 +116,12 @@ shinyPredict<-function(models,data,path,info,title="Predictions",shinytheme="cer
   else {
     lv.xvars<-names(data)
     lv.xvars<-lv.xvars[!grepl(as.character(formula(ulos.mallit[[1]]))[2],lv.xvars)]
-    }
+  }
+
+  lv.testi<-sapply(lv.xvars,function(x){
+    if(is.numeric(data[[x]])|is.factor(data[[x]])){return(1)}
+    else{stop("All variables must be numeric or factors.")}
+     })
 
 
   # Generate code for data generation for predictions
@@ -188,6 +195,10 @@ shinyPredict<-function(models,data,path,info,title="Predictions",shinytheme="cer
                "load(file=\"models.RData\")",
                "lv.malli.value<-as.character(seq(tmp.mallit))",
                "names(lv.malli.value)<-sapply(tmp.mallit,function(x){as.character(formula(x))[3]})",
+               "tmp.dt.AIC<-data.frame(Model=sapply(tmp.mallit,function(x){as.character(formula(x))[3]}),
+                                      AIC=sapply(tmp.mallit,function(x)AIC(x)))",
+               "tmp.dt.AIC<-tmp.dt.AIC[order(tmp.dt.AIC$AIC),]",
+               "tmp.dt.AIC$Relative.likelihood<-exp((tmp.dt.AIC$AIC[1]-tmp.dt.AIC$AIC)/2)",
                "# Time variable name",
                "lv.i.coxph<-sum(class(tmp.mallit[[1]])%in%'coxph')",
                'lv.time<-gsub(x=strsplit(x=strsplit(x=as.character(formula(tmp.mallit[[1]]))[2],split = "\\\\(")[[1]][2],
@@ -246,6 +257,7 @@ shinyPredict<-function(models,data,path,info,title="Predictions",shinytheme="cer
   lv.tmp.osa.3A<-c("")
   lv.tmp.osa.3B<-c(
     "                tabPanel(\"Summary\", verbatimTextOutput(\"Summary\")),",
+    "                tabPanel(\"AIC\", htmlOutput(\"AICTab\")),",
     "                tabPanel(\"Info\",htmlOutput(\"Info\"))",
     "        )", "    )", "))", "# Define server logic required to draw a histogram",
     "server <- function(input, output, session) {",
@@ -284,6 +296,9 @@ shinyPredict<-function(models,data,path,info,title="Predictions",shinytheme="cer
                              )
                            ))",
     "    })",
+    "    output$AICTab<- renderPrint({",
+    "      knitr::kable(tmp.dt.AIC,format='html',caption='Compring models with AIC')",
+    "     })",
     "    output$Summary<- renderPrint({",
     "     if(sum(class(tmp.mallit[[as.numeric(input$Model)]])%in%\"coxph\")>0)lv.testi<-cox.zph(tmp.mallit[[as.numeric(input$Model)]])",
     "    else{lv.testi<-NULL}",
